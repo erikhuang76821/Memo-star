@@ -1,13 +1,13 @@
 {
-  "name": "memo-star",
+  "name": "coderecall",
   "version": "2.0.0",
   "description": "Zero-dependency, daemon-less persistent memory layer for AI coding agents — survives context compaction, works across IDEs/CLIs. No vector DB, no API keys.",
   "bin": {
-    "memo-star": "memo.js"
+    "coderecall": "coderecall.js"
   },
-  "main": "memo.js",
+  "main": "coderecall.js",
   "files": [
-    "memo.js",
+    "coderecall.js",
     "hooks/",
     "templates/",
     "skills/",
@@ -19,8 +19,8 @@
     "ROADMAP.md"
   ],
   "scripts": {
-    "test": "node memo.js selftest",
-    "prepublishOnly": "node memo.js selftest"
+    "test": "node coderecall.js selftest",
+    "prepublishOnly": "node coderecall.js selftest"
   },
   "engines": {
     "node": ">=10.12"
@@ -40,11 +40,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/erikhuang76821/Memo-star.git"
+    "url": "git+https://github.com/erikhuang76821/code-recall.git"
   },
-  "homepage": "https://github.com/erikhuang76821/Memo-star#readme",
+  "homepage": "https://github.com/erikhuang76821/code-recall#readme",
   "bugs": {
-    "url": "https://github.com/erikhuang76821/Memo-star/issues"
+    "url": "https://github.com/erikhuang76821/code-recall/issues"
   },
   "license": "MIT"
 }

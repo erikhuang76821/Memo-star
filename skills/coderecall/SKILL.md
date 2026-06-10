@@ -1,9 +1,9 @@
 ---
-name: memo-star
-description: Persistent task ledger recitation protocol for compaction-proof work. Use when the user says "memo", "memo-star", "記憶帳本", "task ledger", "resume task", "continue where we left off", when context was just compacted, or when the project contains .ai/memory/.
+name: coderecall
+description: Persistent task ledger recitation protocol for compaction-proof work. Use when the user says "memo", "coderecall", "記憶帳本", "task ledger", "resume task", "continue where we left off", when context was just compacted, or when the project contains .ai/memory/.
 ---
 
-# Memo-star recitation protocol
+# Code Recall recitation protocol
 
 The project keeps a persistent task ledger in `.ai/memory/`. It is the
 source of truth for in-progress work — more trustworthy than your own
@@ -30,7 +30,7 @@ context, and the ONLY thing guaranteed to survive context compaction.
 4. **When something fails**: append to `LESSONS.md` stating what failed
    AND the root cause, so no future session retries it blindly.
 5. **When the checklist is done**: consolidate — move completed phases
-   to `archive/`, dedupe DECISIONS/LESSONS (run `node memo.js consolidate`
+   to `archive/`, dedupe DECISIONS/LESSONS (run `node coderecall.js consolidate`
    if available), then write the next GOAL or clear the ledger.
 
 ## Writing rules
