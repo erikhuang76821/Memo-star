@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * memo-star UserPromptSubmit hook (OPTIONAL — default OFF)
+ * coderecall UserPromptSubmit hook (OPTIONAL — default OFF)
  *
  * Injects a single ~15-token reminder when the ledger has gone stale
  * (TASK.md UPDATED older than ~45 min), throttled to at most once per that
@@ -9,7 +9,7 @@
  * UserPromptSubmit hook in ~/.claude/settings.json pointing at this file
  * (see README "Optional staleness reminder").
  *
- * The reminder text is memo-star's own (not ledger-derived), so it carries no
+ * The reminder text is coderecall's own (not ledger-derived), so it carries no
  * untrusted-data fence. Never throws; always exits 0.
  * Standalone: run with `node userpromptsubmit.js`.
  */
@@ -64,9 +64,9 @@ async function main() {
   const memDir = path.join(cwd, '.ai', 'memory');
   if (!fs.existsSync(memDir)) return; // not a memo project — zero cost exit
 
-  // memo.js binds its ledger paths to process.cwd() at require time.
+  // coderecall.js binds its ledger paths to process.cwd() at require time.
   process.chdir(cwd);
-  const memo = require(path.join(__dirname, '..', 'memo.js'));
+  const memo = require(path.join(__dirname, '..', 'coderecall.js'));
 
   const reminder = memo.buildStaleReminder();
   if (!reminder) return; // fresh ledger, or already reminded inside the throttle window

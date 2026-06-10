@@ -20,17 +20,17 @@ sync --all merges (never overwrites) into .gemini/settings.json (contextFileName
 ## v2.0 MCP server is zero-dep stdio JSON-RPC, files stay the storage layer
 - date: 2026-06-10
 - confidence: high
-`memo mcp` hand-rolls newline-delimited JSON-RPC 2.0 over stdin/stdout (no SDK → zero deps). Tools: read_memory/update_task/write_decision/write_lesson/search_memory. Tool errors returned with isError:true (model sees them) not as JSON-RPC errors. Closes honor-system write-back without making MCP mandatory — AGENTS.md still covers non-MCP tools.
+`coderecall mcp` hand-rolls newline-delimited JSON-RPC 2.0 over stdin/stdout (no SDK → zero deps). Tools: read_memory/update_task/write_decision/write_lesson/search_memory. Tool errors returned with isError:true (model sees them) not as JSON-RPC errors. Closes honor-system write-back without making MCP mandatory — AGENTS.md still covers non-MCP tools.
 
 ## Temporal model supersedes (keeps history) rather than overwrites
 - date: 2026-06-10
 - confidence: high
 upsertEntry on >0.8 title overlap marks old `status: superseded` + keeps it (evolution stays searchable), new entry records `supersedes:`. `expires:` enables auto-forget. consolidate retires superseded+expired to archive/retired-YYYY-MM.md. Borrowed from supermemory's temporal/contradiction handling, zero-dep (no LLM/vector).
 
-## Git pre-commit hook is a memo.js subcommand, not shell in the installers
+## Git pre-commit hook is a coderecall.js subcommand, not shell in the installers
 - date: 2026-06-10
 - confidence: high
-Implemented install-githook/precommit/remove-githook in memo.js (node writes the .git/hooks/pre-commit file) instead of duplicating shell logic in install.ps1 + install.sh. One cross-platform code path, testable, and Git for Windows runs the sh hook fine. Re-stage uses `git ls-files --cached --error-unmatch` (tracked?), NOT `git diff --cached` (which misses a freshly-refreshed file).
+Implemented install-githook/precommit/remove-githook in coderecall.js (node writes the .git/hooks/pre-commit file) instead of duplicating shell logic in install.ps1 + install.sh. One cross-platform code path, testable, and Git for Windows runs the sh hook fine. Re-stage uses `git ls-files --cached --error-unmatch` (tracked?), NOT `git diff --cached` (which misses a freshly-refreshed file).
 
 ## Pre-commit hook is advisory by default; --strict bakes in blocking; no ANSI
 - date: 2026-06-10

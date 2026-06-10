@@ -1,16 +1,17 @@
 # TASK
-GOAL: Ship Memo-star v2.0 — temporal/contradiction model, selftest, graduate, zero-dep MCP server, npm packaging
-NOW: v2.0 complete, verified, pushed — PR #4 open against master (commit 4c9cc86)
-NEXT: merge PR #4 into master (awaiting user go-ahead); optional: npm publish (needs login/2FA)
-UPDATED: 2026-06-10T19:05:00+08:00
+GOAL: Rebrand Memo-star → "Code Recall" and refocus positioning on "Persistent memory for coding agents"
+NOW: Full deep rename done (entry file coderecall.js, all markers CODE-RECALL, env CODE_RECALL_*, ~/.coderecall, [coderecall] prefix, npm pkg coderecall); verified end-to-end
+NEXT: commit on rebrand branch, open PR, close superseded PRs #5/#6, rename GitHub repo → code-recall
+UPDATED: 2026-06-10T20:00:00+08:00
 
 ## Checklist
-- [x] v1.0–v1.3 shipped (search, deinit, lint, sessions, git hook) — on master
-- [x] v2.0 #15 — temporal/contradiction/expiry: supersedes/superseded-by/expires; upsert supersedes not overwrites; consolidate retires to archive/retired-YYYY-MM.md
-- [x] v2.0 #16 — `memo selftest` / `doctor --selftest`: 8/8 compaction-survival checks; npm test wired
-- [x] v2.0 #14 — `memo graduate [--global]`: export to docs/ai_wiki + optional ~/.memo-star/GLOBAL-LESSONS.md (MEMO_STAR_GLOBAL_DIR override); opt-in digest injection
-- [x] v2.0 #13 — `memo mcp`: zero-dep stdio JSON-RPC MCP server (read_memory/update_task/write_decision/write_lesson/search_memory)
-- [x] v2.0 #12 — package.json + bin for `npx memo-star` + LICENSE; zero runtime deps; `memo version`
-- [x] Docs (CHANGELOG/SPEC/COMPATIBILITY/README/ROADMAP) + version 2.0.0
-- [x] Found+fixed: os.homedir() USERPROFILE gotcha (global-dir env override); cleaned real-home pollution
-- [ ] Commit v2.0 on branch + open PR to master
+- [x] v1.0–v2.0 shipped on master (search, deinit, lint, sessions, git hook, temporal, mcp, graduate, selftest+CI, npm pkg)
+- [x] Naming decided: brand "Code Recall", CLI+npm `coderecall`, entry file coderecall.js, full deep rename
+- [x] git mv memo.js→coderecall.js, skills/memo-star→skills/coderecall
+- [x] Bulk rename: MEMO-STAR→CODE-RECALL, MEMO_STAR_→CODE_RECALL_, memo-star→coderecall, Memo-star→Code Recall, memo.js→coderecall.js, command refs memo X→coderecall X
+- [x] Fixed MARKER_BEGIN_RE (regex-escaped memo\.js missed by bulk pass) → marker round-trip verified "in sync"
+- [x] Verified: selftest 11/11, sync --all, MCP write_decision, doctor --selftest, install-githook, deinit
+- [x] Regenerated repo AGENTS.md with CODE-RECALL markers
+- [ ] Commit + push rebrand branch, open PR
+- [ ] Close superseded PRs #5 (prepublish gate) / #6 (README polish)
+- [ ] Rename GitHub repo erikhuang76821/Memo-star → code-recall

@@ -1,7 +1,7 @@
-# install.ps1 — Memo-star global hook installer for Claude Code (Windows).
+# install.ps1 — Code Recall global hook installer for Claude Code (Windows).
 # PowerShell 5.1 compatible (no ternary, no && chains, no null-coalescing).
 #
-# Merges Memo-star hook entries into ~/.claude/settings.json:
+# Merges Code Recall hook entries into ~/.claude/settings.json:
 #   SessionStart (matcher "startup|resume|clear|compact") -> hooks/sessionstart.js
 #   PreCompact   (matcher "")                             -> hooks/precompact.js
 #   Stop         (matcher "")                             -> hooks/stop.js
@@ -10,7 +10,7 @@
 #   - Parses settings.json first; ABORTS on parse failure (never overwrites).
 #   - Timestamped backup before any write.
 #   - APPEND only; existing entries (e.g. Codirigent hooks) are never touched.
-#   - Idempotent: entries whose command contains "memo-star" or this repo's
+#   - Idempotent: entries whose command contains "coderecall" or this repo's
 #     hooks path are detected and skipped.
 #   - -Uninstall removes ONLY our entries.
 #   - -SettingsPath lets you target a different file (used for testing).
@@ -55,14 +55,14 @@ if (-not $Uninstall) {
     $nodeCmd = $null
     try { $nodeCmd = Get-Command node -ErrorAction Stop } catch { $nodeCmd = $null }
     if ($null -eq $nodeCmd) {
-        Write-Host "[memo-star] ABORT: Node.js is required but 'node' was not found on PATH." -ForegroundColor Red
-        Write-Host "  The memo-star hooks are Node scripts and cannot run without it." -ForegroundColor Red
+        Write-Host "[coderecall] ABORT: Node.js is required but 'node' was not found on PATH." -ForegroundColor Red
+        Write-Host "  The coderecall hooks are Node scripts and cannot run without it." -ForegroundColor Red
         Write-Host "  Install Node.js from https://nodejs.org and re-run this installer." -ForegroundColor Red
         exit 1
     }
     $nodePath = $nodeCmd.Source
     if (-not $nodePath) { $nodePath = $nodeCmd.Path }
-    Write-Host "[memo-star] Using node: $nodePath"
+    Write-Host "[coderecall] Using node: $nodePath"
 }
 
 # The hook command embeds the paths in double quotes and is run through a shell
@@ -71,7 +71,7 @@ if (-not $Uninstall) {
 if (-not $Uninstall) {
     foreach ($unsafeCandidate in @($hooksDir, $nodePath)) {
         if ($unsafeCandidate -match '["%&^!<>|`$]' -or $unsafeCandidate -match "`r|`n") {
-            Write-Host "[memo-star] ABORT: a path used in hook commands contains shell-unsafe characters:" -ForegroundColor Red
+            Write-Host "[coderecall] ABORT: a path used in hook commands contains shell-unsafe characters:" -ForegroundColor Red
             Write-Host "  $unsafeCandidate" -ForegroundColor Red
             Write-Host '  Use a path without " % & ^ ! < > | ` $ or newlines and re-run.' -ForegroundColor Red
             exit 1
@@ -81,7 +81,7 @@ if (-not $Uninstall) {
 
 # --- Helpers ---------------------------------------------------------------
 function Test-IsMemoStarEntry {
-    # An entry is "ours" if any of its command strings mentions memo-star
+    # An entry is "ours" if any of its command strings mentions coderecall
     # or this repo's hooks directory.
     param($Entry, [string]$HooksDir)
     if ($null -eq $Entry) { return $false }
@@ -92,7 +92,7 @@ function Test-IsMemoStarEntry {
         $cmdProp = $h.PSObject.Properties['command']
         if ($null -eq $cmdProp -or $null -eq $cmdProp.Value) { continue }
         $cmd = [string]$cmdProp.Value
-        if ($cmd -match '(?i)memo-star') { return $true }
+        if ($cmd -match '(?i)coderecall') { return $true }
         if ($cmd.ToLowerInvariant().Contains($HooksDir.ToLowerInvariant())) { return $true }
     }
     return $false
@@ -110,13 +110,13 @@ if (Test-Path -LiteralPath $SettingsPath) {
         try {
             $settings = ConvertFrom-Json -InputObject $raw
         } catch {
-            Write-Host "[memo-star] ABORT: could not parse $SettingsPath as JSON. Nothing was changed." -ForegroundColor Red
+            Write-Host "[coderecall] ABORT: could not parse $SettingsPath as JSON. Nothing was changed." -ForegroundColor Red
             Write-Host ("  Parse error: {0}" -f $_.Exception.Message) -ForegroundColor Red
             exit 1
         }
     }
 } elseif ($Uninstall) {
-    Write-Host "[memo-star] No settings file at $SettingsPath; nothing to uninstall."
+    Write-Host "[coderecall] No settings file at $SettingsPath; nothing to uninstall."
     exit 0
 }
 
@@ -124,7 +124,7 @@ if (Test-Path -LiteralPath $SettingsPath) {
 # that is not an object; Add-Member on those misbehaves. Mirror install.sh:
 # abort unless the parsed settings is an actual JSON object (PSCustomObject).
 if ($null -ne $settings -and -not ($settings -is [System.Management.Automation.PSCustomObject])) {
-    Write-Host "[memo-star] ABORT: $SettingsPath is not a JSON object. Nothing was changed." -ForegroundColor Red
+    Write-Host "[coderecall] ABORT: $SettingsPath is not a JSON object. Nothing was changed." -ForegroundColor Red
     exit 1
 }
 
@@ -134,9 +134,9 @@ if ($null -eq $settings) { $settings = New-Object PSObject }
 if ($fileExisted) {
     # Millisecond suffix: rapid repeated runs must not overwrite one backup.
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss-fff'
-    $backupPath = "$SettingsPath.memo-star.bak.$stamp"
+    $backupPath = "$SettingsPath.coderecall.bak.$stamp"
     Copy-Item -LiteralPath $SettingsPath -Destination $backupPath -Force
-    Write-Host "[memo-star] Backup written: $backupPath"
+    Write-Host "[coderecall] Backup written: $backupPath"
 }
 
 # --- Ensure hooks container ------------------------------------------------
@@ -182,7 +182,7 @@ if ($Uninstall) {
     if (@($settings.hooks.PSObject.Properties).Count -eq 0) {
         $settings.PSObject.Properties.Remove('hooks')
     }
-    Write-Host "[memo-star] Removed $removed memo-star hook entr(y/ies)."
+    Write-Host "[coderecall] Removed $removed coderecall hook entr(y/ies)."
 } else {
     # --- Append our entries (idempotent) ------------------------------------
     foreach ($eventName in @('SessionStart', 'PreCompact', 'Stop')) {
@@ -202,7 +202,7 @@ if ($Uninstall) {
             if (Test-IsMemoStarEntry -Entry $e -HooksDir $hooksDir) { $alreadyInstalled = $true; break }
         }
         if ($alreadyInstalled) {
-            Write-Host "  [skip] $eventName already has a memo-star entry."
+            Write-Host "  [skip] $eventName already has a coderecall entry."
             $settings.hooks.$eventName = $existing
             continue
         }
@@ -233,12 +233,12 @@ if ($settingsDir -and -not (Test-Path -LiteralPath $settingsDir)) {
 $json = ConvertTo-Json -InputObject $settings -Depth 32
 # UTF-8 without BOM so every JSON consumer can read it.
 [System.IO.File]::WriteAllText($SettingsPath, $json, (New-Object System.Text.UTF8Encoding($false)))
-Write-Host "[memo-star] Updated $SettingsPath"
+Write-Host "[coderecall] Updated $SettingsPath"
 
 # --- Prune old backups (keep the newest 5) ----------------------------------
 $bakKeep = 5
 if ($settingsDir -and (Test-Path -LiteralPath $settingsDir)) {
-    $bakFilter = (Split-Path -Leaf $SettingsPath) + '.memo-star.bak.*'
+    $bakFilter = (Split-Path -Leaf $SettingsPath) + '.coderecall.bak.*'
     $bakFiles = @(Get-ChildItem -Path $settingsDir -Filter $bakFilter -File -ErrorAction SilentlyContinue |
         Sort-Object -Property @{Expression = 'LastWriteTime'; Descending = $true}, @{Expression = 'Name'; Descending = $true})
     if ($bakFiles.Count -gt $bakKeep) {
@@ -253,5 +253,5 @@ if ($settingsDir -and (Test-Path -LiteralPath $settingsDir)) {
     }
 }
 if (-not $Uninstall) {
-    Write-Host "[memo-star] Done. Hooks are global; per-project memory activates only where .ai/memory/ exists (run 'node memo.js init')."
+    Write-Host "[coderecall] Done. Hooks are global; per-project memory activates only where .ai/memory/ exists (run 'node coderecall.js init')."
 }

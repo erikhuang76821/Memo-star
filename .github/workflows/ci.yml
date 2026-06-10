@@ -33,7 +33,7 @@ jobs:
       - name: Syntax check all scripts
         shell: bash
         run: |
-          for f in memo.js hooks/*.js; do node -c "$f"; done
+          for f in coderecall.js hooks/*.js; do node -c "$f"; done
       - name: Compaction-survival selftest (npm test)
         run: npm test
       - name: Smoke test the CLI in a fresh project
@@ -41,7 +41,7 @@ jobs:
         run: |
           tmp="$(mktemp -d)"
           cd "$tmp"
-          node "$GITHUB_WORKSPACE/memo.js" init
-          node "$GITHUB_WORKSPACE/memo.js" status
-          MEMO_STAR_SETTINGS=/dev/null node "$GITHUB_WORKSPACE/memo.js" doctor || true
-          node "$GITHUB_WORKSPACE/memo.js" search idempotency || true
+          node "$GITHUB_WORKSPACE/coderecall.js" init
+          node "$GITHUB_WORKSPACE/coderecall.js" status
+          CODE_RECALL_SETTINGS=/dev/null node "$GITHUB_WORKSPACE/coderecall.js" doctor || true
+          node "$GITHUB_WORKSPACE/coderecall.js" search idempotency || true

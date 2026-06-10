@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /*
- * memo-star Stop hook
+ * coderecall Stop hook
  *
  * Lightweight end-of-turn heartbeat. Maintains .ai/memory/.heartbeat with
  * the last-stop timestamp, and appends a bounded entry to the sessions.md
  * timeline (de-duplicated on unchanged NOW). Staleness is NOT computed here:
- * buildDigest in memo.js derives it from TASK.md's UPDATED age (it still
+ * buildDigest in coderecall.js derives it from TASK.md's UPDATED age (it still
  * honors a legacy STALE heartbeat line for back-compat, but this hook no
  * longer writes one). Never blocks, never outputs anything, always exits 0.
  * Standalone: run with `node stop.js`.
@@ -61,14 +61,14 @@ async function main() {
   const memDir = path.join(cwd, '.ai', 'memory');
   if (!fs.existsSync(memDir)) return; // not a memo project — zero cost exit
 
-  // memo.js binds its paths to process.cwd() at require time, so chdir first
+  // coderecall.js binds its paths to process.cwd() at require time, so chdir first
   // (same as sessionstart.js). On any failure, fall back to a plain write —
   // the heartbeat is a whole-file replace, so atomic rename alone (no lock)
   // is enough; the hook must never block on lock contention.
   let memo = null;
   try {
     process.chdir(cwd);
-    memo = require(path.join(__dirname, '..', 'memo.js'));
+    memo = require(path.join(__dirname, '..', 'coderecall.js'));
   } catch (e) {
     memo = null;
   }
@@ -85,7 +85,7 @@ async function main() {
   } catch (e) {
     // read-only fs — ignore
   }
-  // Bounded sessions timeline (best-effort; never blocks). Only when memo.js
+  // Bounded sessions timeline (best-effort; never blocks). Only when coderecall.js
   // loaded — appendSession is a whole-file atomic replace, no lock.
   if (memo && typeof memo.appendSession === 'function') {
     try { memo.appendSession(); } catch (e) { /* best effort */ }
