@@ -1,13 +1,13 @@
-# 🌟 Code Recall — The Zero-Dependency AI Memory Layer
+# 🌟 Code Recall — Working memory for coding agents that survives context compaction
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/erikhuang76821/code-recall/actions/workflows/ci.yml/badge.svg)](https://github.com/erikhuang76821/code-recall/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-2.0-orange.svg)](ROADMAP.md)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-**Code Recall** 是一個極致輕量的「跨工具 AI 記憶持久化層」。不需常駐程式 (daemon-less)、不需資料庫、不需 API Key、不需網路。用純 Markdown 檔案 + 生命週期 Hook，讓你的 AI Coding Agents（Claude Code、Cursor、Windsurf、Copilot…）在 **context 被壓縮 (compaction) 後仍接得回任務**。
+**Code Recall** 讓 AI coding agent 在 **context 被壓縮 (compaction) 後仍接得回任務**——這是它的招牌價值。用純 Markdown 工作狀態帳本 + 生命週期 Hook：壓縮前快照、壓縮後把任務狀態重新注入。零依賴、不需常駐程式 (daemon-less)、不需資料庫、不需 API Key、不需網路、代碼不外流。檔案格式開放可攜，Claude Code、Cursor、Windsurf、Copilot、Codex、Gemini 都能讀。
 
-> Zero-friction persistent memory for AI coding agents — survives context compaction, works across every IDE/CLI. No daemon, no vector DB, no API keys, no network.
+> The local working-state ledger that makes coding agents survive context compaction. Zero dependencies, no daemon, no vector DB, no API keys, no cloud. The file format is open and portable.
 
 **需求：** Node ≥ 10.12（2018 年後的 Node 即可；CI 實測 Node 18 / 20 × Linux / Windows）。
 
@@ -59,6 +59,8 @@ node path\to\code-recall\coderecall.js init        # Windows
 | `DECISIONS.md` | 架構決策與發現（附日期、信心度） |
 | `LESSONS.md` | 踩坑與根因（"別重試 X 因為 Y"） |
 
+**Git 歸屬（預設 hybrid）：** `init` 會在 `.gitignore` 寫入一段——**耐久的團隊知識（`DECISIONS.md` / `LESSONS.md` + 歸檔）進版控**，**每位開發者各自的工作狀態（`TASK.md` / `sessions.md` / 壓縮快照）留本機**。這樣 `TASK.md` 不會在多人之間造成 `NOW:`/`NEXT:` 合併衝突，git 歷史也不會被機器高頻改動洗版。想在個人私有 repo 也追蹤即時狀態？刪掉 `.gitignore` 區段裡的 `TASK.md` 兩行即可。（committed 的 `AGENTS.md` **刻意不嵌入**即時 `NOW:`/`NEXT:`，避免狀態外洩。）
+
 ### 2. 安裝全域 Hooks（每台機器一次，僅 Claude Code 需要）
 
 ```powershell
@@ -94,8 +96,7 @@ node coderecall.js <command>      # 或發佈後：npx coderecall <command>
 | `digest [--compact]` | 印出 session 注入用摘要（除錯用） |
 | `consolidate` | 歸檔完成項目（月度）、退役 superseded/過期條目、去重、老化降級 |
 | `snapshot` | 手動寫一份快照 |
-| `graduate [--global]` | 把 >90 天高信心條目匯出到 `docs/ai_wiki/`（+選配跨專案教訓） |
-| `mcp` | 啟動零依賴 stdio MCP server（把記憶寫回變成工具呼叫） |
+| `mcp` | 啟動零依賴 stdio MCP server（把狀態寫回變成工具呼叫） |
 | `precommit [--strict]` | git hook 用：刷新 digest + lint（`--strict` 阻擋） |
 | `install-githook [--strict]` / `remove-githook` | 安裝/移除 git pre-commit 閘門 |
 | `deinit [--yes]` | 從專案乾淨移除（預設 dry-run） |
@@ -213,7 +214,7 @@ node coderecall.js remove-githook
 ```
 commit 時自動以 `TASK.md` 重生 AGENTS.md 摘要 + lint 帳本，並 re-stage 已追蹤的 AGENTS.md/CLAUDE.md。跨平台（node 產生 sh hook）、marker 合併不覆蓋既有 hook、`deinit` 會一併移除。需繞過一次：`git commit --no-verify`。
 
-### 🎓 選配：知識畢業 + 跨專案教訓
+### 🎓 選配（實驗性，非核心）：知識畢業 + 跨專案教訓
 
 ```sh
 node coderecall.js graduate            # >90 天、confidence high 匯出到 docs/ai_wiki/

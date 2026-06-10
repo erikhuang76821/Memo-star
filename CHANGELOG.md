@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.1 (2026-06-10)
+
+1. **Hybrid git ownership (new default).** `init` writes a managed `.gitignore` block: durable, team-valuable knowledge (`DECISIONS.md`, `LESSONS.md`, `archive/consolidated-*`, `archive/retired-*`) is committed; volatile per-developer working state (`TASK.md`, `sessions.md`, `archive/precompact-*`, transient dotfiles) stays local-only. This removes the multi-developer `NOW:`/`NEXT:` merge-conflict problem and stops machine edits from flooding git history. A solo dev who wants live state tracked deletes two lines from the block. `deinit` strips it. (Decided via a three-way review — Claude + Codex + Gemini independently converged on hybrid.)
+2. **Committed `AGENTS.md` no longer embeds live `GOAL`/`NOW`/`NEXT`.** It now carries only the protocol + a pointer to `.ai/memory/TASK.md`. Without this, gitignoring `TASK.md` would still leak working state into version control through the AGENTS.md marker. Claude Code still receives live state via the SessionStart hook digest; other tools read `TASK.md` per the protocol. Net effect: the committed file is stable and low-churn.
+3. **Positioning sharpened.** README now leads with "working memory for coding agents that survives context compaction" (was "AI Memory Layer"), and `graduate` (knowledge export) moves out of the core command list into an experimental section — keeping the core promise focused on session survival.
+
 ## v2.0 (2026-06-10)
 
 1. **Temporal / contradiction / expiry model** (borrowed from supermemory, zero-dep): DECISIONS/LESSONS entries support `supersedes:` / `superseded-by:` and an optional `expires: YYYY-MM-DD`. `write`-ing an entry whose title overlaps an existing active one no longer silently overwrites — the old entry is marked `status: superseded` (and kept, so the decision's evolution stays visible and searchable) while the new one records what it supersedes. `consolidate` now **retires** superseded + expired entries to `archive/retired-YYYY-MM.md` (auto-forget), then legacy-dedupes and age-flags. Directly hardens the "stale/contradictory ledger" failure mode.

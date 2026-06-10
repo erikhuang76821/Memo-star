@@ -46,6 +46,15 @@ code-recall/
   (+ optional per-tool stubs via `coderecall sync --all`)
 ```
 
+## Git ownership (hybrid — the default)
+The ledger mixes two lifecycles, so `coderecall init` writes a managed `.gitignore` block that splits them:
+- **Committed (durable, team-valuable):** `DECISIONS.md`, `LESSONS.md`, `archive/consolidated-*.md`, `archive/retired-*.md`, and `AGENTS.md` + stubs.
+- **Local-only (volatile / per-developer):** `TASK.md`, `sessions.md`, `archive/precompact-*.md`, and the transient `.heartbeat` / `.reminder` / `.lock/`.
+
+Rationale: `TASK.md`'s `NOW:`/`NEXT:` are per-developer, per-branch working state — committing them causes constant merge conflicts and floods history with machine edits; gitignoring the durable decision/lesson log would lose the team-shared constraints. The split is the default (no flag); a solo developer who wants git to carry live task state deletes the `TASK.md`/`sessions.md` lines from the block.
+
+Critical consequence: the committed `AGENTS.md` marker section **must not embed live GOAL/NOW/NEXT** — that would leak local working state into version control through the back door. So `renderSectionBody` emits only the protocol + a pointer to `.ai/memory/TASK.md`; Claude Code still gets live state via the SessionStart hook digest, and other tools read `TASK.md` per the protocol. `deinit` strips the managed `.gitignore` block.
+
 ## Ledger file formats (strict, machine-parseable)
 
 ### TASK.md
