@@ -1,0 +1,47 @@
+name: CI
+
+# Proves the headline claim ("survives context compaction") on every push/PR,
+# across the OSes and Node versions users actually run. The selftest spawns the
+# CLI + the real hook scripts (sessionstart/precompact) in a throwaway project
+# and asserts the injected/snapshotted context — no mocks.
+
+on:
+  push:
+    branches: [master, "v*"]
+  pull_request:
+    branches: [master]
+
+jobs:
+  selftest:
+    name: selftest (${{ matrix.os }}, node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: ['18', '20']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Confirm zero runtime dependencies
+        shell: bash
+        run: |
+          # The package must never grow a runtime dependency.
+          node -e "const p=require('./package.json'); if (p.dependencies && Object.keys(p.dependencies).length) { console.error('runtime dependencies present:', p.dependencies); process.exit(1); } console.log('zero runtime deps: ok');"
+      - name: Syntax check all scripts
+        shell: bash
+        run: |
+          for f in memo.js hooks/*.js; do node -c "$f"; done
+      - name: Compaction-survival selftest (npm test)
+        run: npm test
+      - name: Smoke test the CLI in a fresh project
+        shell: bash
+        run: |
+          tmp="$(mktemp -d)"
+          cd "$tmp"
+          node "$GITHUB_WORKSPACE/memo.js" init
+          node "$GITHUB_WORKSPACE/memo.js" status
+          MEMO_STAR_SETTINGS=/dev/null node "$GITHUB_WORKSPACE/memo.js" doctor || true
+          node "$GITHUB_WORKSPACE/memo.js" search idempotency || true
