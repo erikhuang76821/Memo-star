@@ -19,7 +19,8 @@
     "ROADMAP.md"
   ],
   "scripts": {
-    "test": "node memo.js selftest"
+    "test": "node memo.js selftest",
+    "prepublishOnly": "node memo.js selftest"
   },
   "engines": {
     "node": ">=10.12"
