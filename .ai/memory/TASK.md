@@ -1,7 +1,7 @@
 # TASK
 GOAL: Ship Memo-star v2.0 — temporal/contradiction model, selftest, graduate, zero-dep MCP server, npm packaging
-NOW: v2.0 code complete and verified end-to-end (temporal/retire, selftest 8/8, MCP session, graduate+global, npm pack); docs + version bumped to 2.0.0
-NEXT: commit on a v2.0 branch, push, open PR to master
+NOW: v2.0 complete, verified, pushed — PR #4 open against master (commit 4c9cc86)
+NEXT: merge PR #4 into master (awaiting user go-ahead); optional: npm publish (needs login/2FA)
 UPDATED: 2026-06-10T19:05:00+08:00
 
 ## Checklist

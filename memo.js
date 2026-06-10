@@ -1732,6 +1732,27 @@ function cmdSelftest() {
     check('compact digest embeds full TASK body', /--- Full TASK\.md ---/.test(compact));
     check('compact digest carries NEXT verbatim', /NEXT: add backpressure to stage 3/.test(compact));
     check('compact digest keeps untrusted fence', /UNTRUSTED-LEDGER-DATA:BEGIN/.test(compact));
+
+    // Drive the ACTUAL hook entry points (what Claude Code executes), not just
+    // buildDigest — proves the injection/snapshot path works end to end.
+    const runHook = (hookFile, input) => cp.execFileSync(process.execPath, [path.join(__dirname, 'hooks', hookFile)], {
+      input: JSON.stringify(input), cwd: tmp, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    const hookCtx = (out) => { try { return JSON.parse(out).hookSpecificOutput.additionalContext || ''; } catch (e) { return ''; } };
+    const ssStart = hookCtx(runHook('sessionstart.js', { cwd: tmp, source: 'startup', hook_event_name: 'SessionStart' }));
+    check('sessionstart hook injects GOAL', /GOAL: ship the widget pipeline/.test(ssStart));
+    const ssCompact = hookCtx(runHook('sessionstart.js', { cwd: tmp, source: 'compact', hook_event_name: 'SessionStart' }));
+    check('sessionstart compact hook re-anchors + full TASK', /Re-anchor/.test(ssCompact) && /--- Full TASK\.md ---/.test(ssCompact));
+
+    const transcript = path.join(tmp, 'transcript.jsonl');
+    fs.writeFileSync(transcript, [
+      JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'wired stage 2' }] } }),
+      JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Edit', input: { file_path: 'a.js' } }] } }),
+    ].join('\n') + '\n', 'utf8');
+    runHook('precompact.js', { cwd: tmp, trigger: 'auto', transcript_path: transcript, hook_event_name: 'PreCompact' });
+    let snaps = [];
+    try { snaps = fs.readdirSync(path.join(tmp, '.ai', 'memory', 'archive')).filter((n) => /^precompact-.*\.md$/.test(n)); } catch (e) { /* none */ }
+    check('precompact hook wrote a snapshot', snaps.length > 0);
   } catch (e) {
     check('selftest ran without throwing', false);
     console.log('  selftest error: ' + (e && e.message ? e.message : String(e)));
