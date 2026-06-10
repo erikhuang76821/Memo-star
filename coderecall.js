@@ -952,15 +952,23 @@ function scoreWorkingState() {
   dims.push({ key: 'grounding', w: 5, score: (dN + lN) > 0 ? 100 : 60, why: (dN + lN) > 0 ? dN + ' decisions, ' + lN + ' lessons on file' : 'no decisions/lessons recorded yet' });
 
   const wsum = dims.reduce((a, d) => a + d.w, 0);
-  const overall = Math.round(dims.reduce((a, d) => a + d.score * d.w, 0) / wsum);
-  return { overall, dims };
+  let overall = Math.round(dims.reduce((a, d) => a + d.score * d.w, 0) / wsum);
+  // Empty-ledger guard: when all three load-bearing fields are placeholders, the
+  // "free" support dims (freshness on a just-created file, no-blockers because
+  // there's nothing, grounding) would otherwise pad the score to ~33 — false
+  // comfort for a ledger that is 0% usable. Floor it so the number is honest.
+  const core = dims.filter((d) => d.key === 'goal' || d.key === 'now' || d.key === 'next');
+  const emptyCore = core.every((d) => d.score === 0);
+  if (emptyCore) overall = Math.min(overall, 8);
+  return { overall, dims, emptyCore };
 }
 
 function cmdScore(asJson) {
   requireLedger();
   const r = scoreWorkingState();
   if (asJson) { process.stdout.write(JSON.stringify(r) + '\n'); return; }
-  console.log('coderecall score: ' + r.overall + ' / 100   (working-state health)');
+  console.log('coderecall score: ' + r.overall + ' / 100   (working-state health)' +
+    (r.emptyCore ? '   — empty ledger: fill GOAL / NOW / NEXT to begin' : ''));
   console.log('');
   for (const d of r.dims) {
     console.log('  ' + d.key.padEnd(10) + ' ' + String(d.score).padStart(3) + '  ' + d.why);
@@ -1891,6 +1899,16 @@ function cmdSelftest() {
     try { vagueObj = JSON.parse(run(['score', '--json'])); } catch (e) { vagueObj = {}; }
     const vagueNext = (vagueObj.dims || []).find((d) => d.key === 'next');
     check('score penalizes a vague NEXT ("continue")', !!vagueNext && vagueNext.score < 60);
+    // Empty-ledger guard: a fresh template (all placeholders) must NOT be padded
+    // to a comfortable score by the free support dims.
+    let emptyObj = {};
+    const freshDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cr-empty-'));
+    try {
+      cp.execFileSync(process.execPath, [__filename, 'init'], { cwd: freshDir, stdio: 'ignore' });
+      emptyObj = JSON.parse(cp.execFileSync(process.execPath, [__filename, 'score', '--json'], { cwd: freshDir, encoding: 'utf8' }));
+    } catch (e) { emptyObj = {}; }
+    check('score floors an empty template (< 15)', typeof emptyObj.overall === 'number' && emptyObj.overall < 15);
+    rmrf(freshDir);
     fs.writeFileSync(path.join(tmp, '.ai', 'memory', 'TASK.md'), taskFixture, 'utf8'); // restore
   } catch (e) {
     check('selftest ran without throwing', false);

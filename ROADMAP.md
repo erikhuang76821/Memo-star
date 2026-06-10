@@ -2,6 +2,26 @@
 
 > 來源:六方評估(低依賴稽核 / 兼容矩陣稽核 / vs llm-wiki / vs MemPalace / Codex CLI 8.5 / Gemini CLI 7.8),2026-06-10。
 
+## 🧭 主軸 (Core direction):Decision Persistence — AI 維護、撐過 compaction 的 ADR
+
+**定位收斂結論(三方審查 + 多輪定位辯論後拍板):** Code Recall 的核心能力是「**決策持久化**」——保存「**為什麼這樣做**」與「**哪些路已證明走不通**」,並讓它們**跨 context 重置/compaction/交接不流失、不腐爛**。
+
+為什麼是這塊:Claude Code 已有 `/init`(codebase 總覽)與 `/handoff`(對話交接),但**沒有 decision log**。大型專案最貴、最難重建的不是「做到哪」(看 code/git 即知),而是**決策理由與死路**——重新 litigate 已定決策、重試已失敗方法是最大浪費。**能記決策的工具很多,但把「決策持久化」當核心能力、形成主流產品的,目前幾乎沒有。** 這是無人佔據的車道。
+
+誠實邊界:ADR(Architecture Decision Record)是既有實務(adr-tools / log4brains 等)。Code Recall 的差異**不是發明決策紀錄**,而是:**AI agent 自動維護 + 撐過 compaction + 時序防腐(supersede/expire) + 零依賴本地 + 跨工具**。
+
+**價值 = decision log(賣點);機制 = compaction 存活 + 自動捕捉 + 防腐(護城河)。** 主打價值,用機制背書(「不像你會忘記更新的 doc」)。
+
+### 主軸下的優化項(依序)
+1. **[M] DECISIONS.md 升級為 ADR 級紀錄**:支援 `Context / Decision / Consequences / Status` 結構;現有 supersede/expire 直接對應 ADR 狀態生命週期(accepted → superseded)。向後相容現有 `## title / date / confidence`。
+2. **[M] 可靠捕捉(頭號風險 = 榮譽制寫回)**:MCP `write_decision` + Stop-hook capture 提示 + `score` 對「決策 log 過薄/過期」扣分。讓「記一筆決策」盡量不靠 agent 自律。
+3. **[M] 浮現 + 防再 litigate**:相關決策在 agent 觸碰相關區域時浮現(先靠 `search`/digest);進階:當提案牴觸一條 accepted 決策時示警。
+4. **[S] 定位落地**:README 改 decision-log-led(招牌 = 「your agent's decision log: why + dead-ends, preserved across compaction」);not-replace(`/init` `/handoff` `CLAUDE.md` RAG)/preserves 區塊。
+5. **[S] ADR 畢業路徑**:`graduate` 目標改為慣例的 `docs/adr/`(而非 `docs/ai_wiki/`),把 >90 天高信心決策輸出為永久 ADR。
+6. **[L] 證據**:benchmark — 有/無 decision log 時,agent「重複決策數 / 重走死路次數 / 重新 litigate 次數」的差異。
+
+## 對比總表
+
 ## 需求符合度判定
 
 | 需求 | 判定 | 證據 |

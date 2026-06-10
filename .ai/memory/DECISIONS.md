@@ -7,6 +7,16 @@ Entry format (strict):
   <body, 1-3 lines>
 -->
 
+## Core direction = Decision Persistence (AI-maintained, compaction-surviving ADR)
+- date: 2026-06-10
+- confidence: high
+Headline capability is persisting WHY + dead-ends across context resets — the gap /init and /handoff leave. Many tools record decisions; almost none make decision PERSISTENCE the core. Differentiation is not inventing ADR but: AI-maintained + survives compaction + temporal anti-rot + zero-dep local. Value=decision log; moat=compaction survival + reliable capture. #1 risk = honor-system write-back → prioritize MCP/Stop-hook capture + score penalizing thin logs.
+
+## score empty-ledger guard: floor at 8 when GOAL/NOW/NEXT all placeholder
+- date: 2026-06-10
+- confidence: high
+Free support dims (freshness/blockers/grounding) were padding an empty template to 33 — false comfort. When core fields are all placeholders, cap overall <=8 + label "empty ledger". selftest asserts empty < 15.
+
 ## `score` is a transparent heuristic, not an ML/precision number
 - date: 2026-06-10
 - confidence: high
