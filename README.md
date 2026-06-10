@@ -92,6 +92,7 @@ node coderecall.js <command>      # 或發佈後：npx coderecall <command>
 | `sync [--all]` | 刷新 AGENTS.md 摘要；`--all` 另產各工具 stub + Gemini/Cursor 原生設定 |
 | `status` | 顯示 GOAL/NOW/NEXT、checklist、檔案大小、漂移、新鮮度 |
 | `doctor [--selftest]` | 健診（hooks/帳本/路徑/lint/Codex 32KiB）；`--selftest` 加跑回歸測試 |
+| `score [--json]` | 評估工作狀態健康度（GOAL 清晰度 / NEXT 可執行性 / blockers 有無理由 / 新鮮度） |
 | `search <query> [--limit N]` | 零依賴 BM25 詞法搜尋（帳本 + archive，中英皆可） |
 | `digest [--compact]` | 印出 session 注入用摘要（除錯用） |
 | `consolidate` | 歸檔完成項目（月度）、退役 superseded/過期條目、去重、老化降級 |
@@ -185,6 +186,15 @@ node coderecall.js search "idempotency key"     # 預設 5 筆
 node coderecall.js search redis 重試 --limit 3   # 中英混合
 ```
 跨帳本 + `archive/` 的零依賴 BM25 詞法搜尋，段落／條目級結果附分數與來源。
+
+### 📊 工作狀態評分 (score)
+
+```sh
+node coderecall.js score          # 人類可讀
+node coderecall.js score --json   # 給 CI / agent 消費
+```
+
+回答「這份帳本**真的**能讓 agent 接手嗎？」——不是看欄位有沒有填，而是**機器檢查可執行性**：GOAL 是否具體、NEXT 是否是一個明確的下一步（"continue" / "TBD" 這種模糊值會被扣分）、每個 `[!]` blocker 有沒有寫理由、帳本是否新鮮。每個維度都附**為什麼**與**先修哪個**。刻意是透明啟發式、不是假精準的 ML 分數——目的是抓出「看起來填好了、其實驅動不了下一步」的假完整。`status` 也會帶一行總分。
 
 ### ✅ 自我驗證 (selftest / CI)
 
