@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * coderecall.js — Code Recall single-file zero-dependency CLI. Version 2.1.0.
+ * coderecall.js — Code Recall single-file zero-dependency CLI. Version 2.2.0.
  * Commands: init | sync [--all] | status | doctor [--selftest] | digest [--compact] | snapshot |
  *           consolidate | search | deinit | precommit | install-githook | remove-githook |
  *           graduate [--global] | mcp | selftest | version
@@ -48,7 +48,7 @@ const CODEX_AGENTS_WARN_BYTES = 32768; // Codex CLI reads ~32KiB of AGENTS.md; w
 const GRADUATE_AGE_DAYS = 90;          // entries older than this + high confidence may graduate
 const GLOBAL_LESSONS_TOPN = 3;         // max global lessons injected into the digest (opt-in)
 
-const VERSION = '2.1.0';
+const VERSION = '2.2.0';
 const MCP_PROTOCOL_VERSION = '2024-11-05';   // MCP stdio JSON-RPC protocol revision we speak
 const HOME = os.homedir();
 // Cross-project global store. Overridable via CODE_RECALL_GLOBAL_DIR (testing, or
@@ -890,6 +890,84 @@ function cmdStatus() {
     'missing-file': 'AGENTS.md MISSING — run: node coderecall.js sync',
   }[drift];
   console.log('AGENTS.md marker section: ' + driftMsg);
+  console.log('');
+  console.log('Working-state score: ' + scoreWorkingState().overall + '/100  (node coderecall.js score for detail)');
+}
+
+// ---------------------------------------------------------------------------
+// Working-state score — is the ledger actually telling an agent what to do?
+//
+// Deliberately a transparent heuristic, not a fake-precision ML number: every
+// dimension states WHY and weights toward actionability (a vague NEXT scores
+// low even if all fields are "filled in"). The point is to catch false
+// completeness — a ledger that looks done but can't drive the next action.
+// ---------------------------------------------------------------------------
+function scoreWorkingState() {
+  const t = parseTask(readFileSafe(TASK_FILE) || '') || { goal: '', now: '', next: '', lines: [] };
+  const dims = [];
+  const isPlaceholder = (s) => !s || /^<.*>$/.test(String(s).trim()) || String(s).trim() === '(not set)';
+  const VAGUE = /\b(tbd|todo|wip|continue|finish (it|up)|keep going|more work|stuff|various|misc|etc)\b/i;
+
+  // GOAL — is the objective stated?
+  const g = (t.goal || '').trim();
+  if (isPlaceholder(g)) dims.push({ key: 'goal', w: 25, score: 0, why: 'GOAL unset/placeholder — state the one-line objective' });
+  else if (g.length < 12) dims.push({ key: 'goal', w: 25, score: 55, why: 'GOAL very short — make it specific' });
+  else dims.push({ key: 'goal', w: 25, score: 100, why: 'GOAL is specific' });
+
+  // NOW — is the current activity stated?
+  const n = (t.now || '').trim();
+  if (isPlaceholder(n)) dims.push({ key: 'now', w: 15, score: 0, why: 'NOW unset — say exactly what is in progress' });
+  else dims.push({ key: 'now', w: 15, score: n.length < 8 ? 60 : 100, why: n.length < 8 ? 'NOW is terse' : 'NOW set' });
+
+  // NEXT — the load-bearing field. Vague = useless even when "filled in".
+  const x = (t.next || '').trim();
+  if (isPlaceholder(x)) dims.push({ key: 'next', w: 25, score: 0, why: 'NEXT unset — give the immediate next action' });
+  else if (VAGUE.test(x) || x.length < 12) dims.push({ key: 'next', w: 25, score: 45, why: 'NEXT is vague — make it one concrete next action' });
+  else dims.push({ key: 'next', w: 25, score: 100, why: 'NEXT is concrete' });
+
+  // BLOCKERS — conditional: only matters when something is blocked; each [!]
+  // must carry a reason/owner (a bare blocked item is dead weight).
+  const blocked = (t.lines || []).filter((l) => /^\s*- \[!\]/.test(l));
+  if (blocked.length === 0) dims.push({ key: 'blockers', w: 15, score: 100, why: 'no open blockers' });
+  else {
+    const withReason = blocked.filter((l) => {
+      const after = l.replace(/^\s*- \[!\]\s*/, '');
+      return after.length > 15 || /[—:]|--| - /.test(after);
+    });
+    const ratio = withReason.length / blocked.length;
+    dims.push({ key: 'blockers', w: 15, score: Math.round(ratio * 100), why: ratio < 1 ? (blocked.length - withReason.length) + ' blocked item(s) lack a reason — add "— why / owner"' : 'blockers all have reasons' });
+  }
+
+  // FRESHNESS — stale state silently misleads.
+  const age = taskAgeHours(t);
+  if (age === null) dims.push({ key: 'freshness', w: 15, score: 0, why: 'UPDATED missing/unparseable' });
+  else if (age <= STALE_HOURS) dims.push({ key: 'freshness', w: 15, score: 100, why: 'fresh (' + age.toFixed(1) + 'h)' });
+  else if (age <= 6) dims.push({ key: 'freshness', w: 15, score: 60, why: age.toFixed(1) + 'h old — consider re-anchoring' });
+  else if (age <= 24) dims.push({ key: 'freshness', w: 15, score: 30, why: age.toFixed(1) + 'h stale — re-anchor NOW/NEXT' });
+  else dims.push({ key: 'freshness', w: 15, score: 10, why: age.toFixed(1) + 'h stale' });
+
+  // GROUNDING (minor) — is the work backed by recorded reasoning?
+  const dN = parseEntries(readFileSafe(DECISIONS_FILE) || '').entries.filter((e) => entryStatus(e) !== 'superseded').length;
+  const lN = parseEntries(readFileSafe(LESSONS_FILE) || '').entries.filter((e) => entryStatus(e) !== 'superseded').length;
+  dims.push({ key: 'grounding', w: 5, score: (dN + lN) > 0 ? 100 : 60, why: (dN + lN) > 0 ? dN + ' decisions, ' + lN + ' lessons on file' : 'no decisions/lessons recorded yet' });
+
+  const wsum = dims.reduce((a, d) => a + d.w, 0);
+  const overall = Math.round(dims.reduce((a, d) => a + d.score * d.w, 0) / wsum);
+  return { overall, dims };
+}
+
+function cmdScore(asJson) {
+  requireLedger();
+  const r = scoreWorkingState();
+  if (asJson) { process.stdout.write(JSON.stringify(r) + '\n'); return; }
+  console.log('coderecall score: ' + r.overall + ' / 100   (working-state health)');
+  console.log('');
+  for (const d of r.dims) {
+    console.log('  ' + d.key.padEnd(10) + ' ' + String(d.score).padStart(3) + '  ' + d.why);
+  }
+  console.log('');
+  const weak = r.dims.filter((d) => d.score < 60).sort((a, b) => a.score - b.score).map((d) => d.key);
+  console.log(weak.length ? 'Fix first: ' + weak.join(', ') : 'Working state is healthy — an agent can pick it up cold.');
 }
 
 /**
@@ -1798,6 +1876,22 @@ function cmdSelftest() {
     let snaps = [];
     try { snaps = fs.readdirSync(path.join(tmp, '.ai', 'memory', 'archive')).filter((n) => /^precompact-.*\.md$/.test(n)); } catch (e) { /* none */ }
     check('precompact hook wrote a snapshot', snaps.length > 0);
+
+    // score: the well-formed fixture (concrete GOAL/NOW/NEXT, blocker with a
+    // reason, fresh) must score high — proves the heuristic rewards real state.
+    let scoreObj = {};
+    try { scoreObj = JSON.parse(run(['score', '--json'])); } catch (e) { scoreObj = {}; }
+    const nextDim = (scoreObj.dims || []).find((d) => d.key === 'next');
+    check('score rates the good fixture high (>=80)', scoreObj.overall >= 80);
+    check('score recognizes a concrete NEXT', !!nextDim && nextDim.score === 100);
+    // Anti-decoration: a vague NEXT must drop the next dimension.
+    const vagueTask = taskFixture.replace('NEXT: add backpressure to stage 3', 'NEXT: continue');
+    fs.writeFileSync(path.join(tmp, '.ai', 'memory', 'TASK.md'), vagueTask, 'utf8');
+    let vagueObj = {};
+    try { vagueObj = JSON.parse(run(['score', '--json'])); } catch (e) { vagueObj = {}; }
+    const vagueNext = (vagueObj.dims || []).find((d) => d.key === 'next');
+    check('score penalizes a vague NEXT ("continue")', !!vagueNext && vagueNext.score < 60);
+    fs.writeFileSync(path.join(tmp, '.ai', 'memory', 'TASK.md'), taskFixture, 'utf8'); // restore
   } catch (e) {
     check('selftest ran without throwing', false);
     console.log('  selftest error: ' + (e && e.message ? e.message : String(e)));
@@ -1989,7 +2083,7 @@ function cmdMcp() {
 function main() {
   const args = process.argv.slice(2);
   const cmd = args[0];
-  const usage = 'usage: node coderecall.js <init|sync [--all]|status|doctor [--selftest]|digest [--compact]|snapshot|consolidate|search <query> [--limit N]|deinit [--yes]|precommit [--strict]|install-githook [--strict]|remove-githook|graduate [--global]|mcp|selftest|version>';
+  const usage = 'usage: node coderecall.js <init|sync [--all]|status|doctor [--selftest]|digest [--compact]|snapshot|consolidate|search <query> [--limit N]|deinit [--yes]|precommit [--strict]|install-githook [--strict]|remove-githook|graduate [--global]|mcp|score [--json]|selftest|version>';
   switch (cmd) {
     case 'init': return cmdInit();
     case 'sync': return cmdSync(args.includes('--all'));
@@ -2005,6 +2099,7 @@ function main() {
     case 'remove-githook': return cmdRemoveGitHook();
     case 'graduate': return cmdGraduate(args.includes('--global'));
     case 'mcp': return cmdMcp();
+    case 'score': return cmdScore(args.includes('--json'));
     case 'selftest': return cmdSelftest();
     case 'version':
     case '--version':

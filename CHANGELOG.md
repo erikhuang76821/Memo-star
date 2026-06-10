@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.2 (2026-06-10)
+
+1. **`coderecall score [--json]` — working-state health.** Rates whether the ledger can actually drive an agent's next move, via a transparent weighted heuristic: GOAL specificity, NEXT concreteness (vague values like "continue"/"TBD" score low even when the field is "filled"), NOW set, every `[!]` blocker carrying a reason, freshness, and grounding in recorded decisions/lessons. Each dimension reports its score + why + a "fix first" list. Deliberately not an ML/precision number — the goal is to catch *false completeness* (a ledger that looks done but can't tell an agent what to do next). `status` now prints the one-line overall. selftest gained 3 checks (concrete NEXT = 100, vague NEXT < 60, fresh template scores low) so the heuristic stays honest.
+
 ## v2.1 (2026-06-10)
 
 1. **Hybrid git ownership (new default).** `init` writes a managed `.gitignore` block: durable, team-valuable knowledge (`DECISIONS.md`, `LESSONS.md`, `archive/consolidated-*`, `archive/retired-*`) is committed; volatile per-developer working state (`TASK.md`, `sessions.md`, `archive/precompact-*`, transient dotfiles) stays local-only. This removes the multi-developer `NOW:`/`NEXT:` merge-conflict problem and stops machine edits from flooding git history. A solo dev who wants live state tracked deletes two lines from the block. `deinit` strips it. (Decided via a three-way review — Claude + Codex + Gemini independently converged on hybrid.)

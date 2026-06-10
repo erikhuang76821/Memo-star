@@ -7,6 +7,11 @@ Entry format (strict):
   <body, 1-3 lines>
 -->
 
+## `score` is a transparent heuristic, not an ML/precision number
+- date: 2026-06-10
+- confidence: high
+coderecall score weights toward actionability (vague NEXT like "continue" scores low even when filled; blockers must carry a reason). Each dim shows why + "fix first". Codex bar: must machine-check actionability or it's decoration — selftest asserts concrete NEXT=100, vague NEXT<60. Purpose: catch false completeness, the failure mode behind "agent doesn't know what to do next".
+
 ## Hybrid git ownership: commit durable knowledge, gitignore working state
 - date: 2026-06-10
 - confidence: high
