@@ -6,3 +6,15 @@
 .ai/memory/.reminder
 .ai/memory/.lock/
 
+
+# >>> coderecall (per-developer working state — local, not committed) >>>
+# Committed by default: DECISIONS.md, LESSONS.md, archive/consolidated-*, archive/retired-*
+# (durable, team-valuable). The lines below are volatile/per-developer — keep them local.
+# Want a solo private repo to track live task state too? Delete the TASK.md/sessions.md lines.
+.ai/memory/TASK.md
+.ai/memory/sessions.md
+.ai/memory/archive/precompact-*.md
+.ai/memory/.heartbeat
+.ai/memory/.reminder
+.ai/memory/.lock/
+# <<< coderecall <<<

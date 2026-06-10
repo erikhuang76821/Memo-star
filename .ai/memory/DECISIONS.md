@@ -7,6 +7,16 @@ Entry format (strict):
   <body, 1-3 lines>
 -->
 
+## Hybrid git ownership: commit durable knowledge, gitignore working state
+- date: 2026-06-10
+- confidence: high
+init writes a .gitignore block: DECISIONS/LESSONS + consolidated/retired archives committed; TASK.md/sessions.md/precompact local-only. Decisive reason: multi-dev NOW:/NEXT: merge conflicts. CRITICAL: committed AGENTS.md must NOT embed live GOAL/NOW/NEXT (would leak working state past the gitignore) — renderSectionBody now emits protocol + pointer only. Three-way reviewed (Claude/Codex/Gemini all converged on hybrid).
+
+## Lead positioning with compaction survival, not "memory"
+- date: 2026-06-10
+- confidence: high
+README headline = "working memory for coding agents that survives context compaction". graduate demoted out of core command list (experimental). The defensible wedge is compaction recovery + stale-state prevention, NOT a "protocol" (don't declare protocol before multi-party adoption earns it — Codex).
+
 ## Search is lexical (BM25), not semantic
 - date: 2026-06-10
 - confidence: high
