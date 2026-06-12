@@ -106,3 +106,11 @@ UserPromptSubmit reminder is opt-in (installers don't register it) because token
 **Context:** reviewers kept asking for evidence; a faked agent benchmark would be worse than none
 **Decision:** ship bench/bench.js (real-CLI, deterministic: tokens/stale%/search-hits, naive vs Code Recall) + bench/README.md live-agent protocol; graduate now emits docs/adr/NNNN ADR files
 **Consequences:** honest, reproducible, zero-dep; task-success claims require a live agent we do not fake; ADR output is the north-star BRIDGE
+
+## Auto-memory boundary rule injected into init template
+- date: 2026-06-12
+- status: accepted
+- confidence: med
+**Context:** Platform auto-memory (Claude/Gemini/Cursor/Cline) duplicates decisions and lessons already in .ai/memory/, breaking SSOT across any project using coderecall.
+**Decision:** Add rule 6 to templates/AGENTS-section.md: ledger is SSOT, auto-memory only for positioning/cross-project context/tool quirks. Three-way reviewed (Claude 4.6 + Gemini 3.1 Pro + Codex GPT […]
+**Consequences:** Every future coderecall init complete — this project now has a decision log at .ai/memory/ (per-project, lives in THIS repo).   kept existing: .ai\memory\TASK.md, .ai\memory\DECISION […]
